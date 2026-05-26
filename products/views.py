@@ -5,12 +5,11 @@ from .forms import ReviewForm
 import stripe
 from django.conf import settings
 from django.urls import reverse
-import google.generativeai as genai
 from django.conf import settings
 from django.http import JsonResponse
 import json
 from django.views.decorators.csrf import csrf_exempt
-
+from google import genai
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
 
