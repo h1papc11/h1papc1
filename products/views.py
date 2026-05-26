@@ -5,6 +5,11 @@ from .forms import ReviewForm
 import stripe
 from django.conf import settings
 from django.urls import reverse
+import google.generativeai as genai
+from django.conf import settings
+from django.http import JsonResponse
+import json
+from django.views.decorators.csrf import csrf_exempt
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
@@ -75,3 +80,41 @@ def notify_me_view(request, pk):
         StockNotification.objects.get_or_create(user=request.user, product=product)
         
     return redirect('product_detail', pk=pk)
+
+@csrf_exempt # Geçici olarak AJAX isteklerinde kolaylık sağlaması için
+def ai_assistant_view(request):
+    if request.method == "POST":
+        try:
+            # Gelen mesajı oku
+            data = json.loads(request.body)
+            user_message = data.get('message')
+
+            # Gemini API'sini çalıştır
+            genai.configure(api_key=settings.GEMINI_API_KEY)
+
+            # 1. Veritabanından stoktaki ürünleri alıyoruz
+            available_products = Product.objects.filter(stock__gt=0).values_list('title', 'price')
+            
+            # 2. Ürünleri yapay zekanın okuyabileceği bir metne çeviriyoruz
+            product_list_text = ", ".join([f"{p[0]} ({p[1]} TL)" for p in available_products])
+
+            # 3. Sisteme kim olduğunu öğretiyoruz (Sistem Promptu)
+            system_instruction = f"""Sen bu e-ticaret sitesinin arkadaş canlısı ve profesyonel müşteri asistanısın. 
+            Amacın müşterilere kısa ve net cevaplar vererek satış yapmalarını sağlamak. 
+            Şu an elimizdeki stokta bulunan ürünler ve fiyatları şunlar: {product_list_text}. 
+            Müşteri bir şey sorarsa SADECE bu ürünler üzerinden tavsiye ver. 
+            Eğer ilgisiz bir şey sorulursa kibarca e-ticaret asistanı olduğunu hatırlat."""
+
+            # 4. Modeli başlat ve cevabı üret
+            model = genai.GenerativeModel('gemini-1.5-flash')
+            prompt = f"{system_instruction}\n\nMüşteri: {user_message}\nAsistan:"
+            
+            response = model.generate_content(prompt)
+
+            # Cevabı siteye (arayüze) geri gönder
+            return JsonResponse({'reply': response.text})
+            
+        except Exception as e:
+            return JsonResponse({'reply': 'Üzgünüm, şu an bağlantı kuramıyorum. Lütfen daha sonra tekrar deneyin.'})
+            
+    return JsonResponse({'error': 'Geçersiz istek.'}, status=400)

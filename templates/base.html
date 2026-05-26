@@ -75,5 +75,123 @@
             }
         });
     </script>
+
+    <button id="ai-chat-btn" class="btn btn-primary rounded-circle shadow-lg transition-hover" style="position: fixed; bottom: 30px; right: 30px; width: 65px; height: 65px; z-index: 1050;">
+        <span style="font-size: 28px;">🤖</span>
+    </button>
+
+    <div id="ai-chat-box" class="card shadow-lg border-0 d-none" style="position: fixed; bottom: 110px; right: 30px; width: 350px; height: 480px; z-index: 1050; display: flex; flex-direction: column; overflow: hidden;">
+        
+        <div class="card-header bg-primary text-white fw-bold d-flex justify-content-between align-items-center py-3">
+            <span><span class="fs-5 me-2">🤖</span> Akıllı Mağaza Asistanı</span>
+            <button id="close-chat-btn" class="btn-close btn-close-white" aria-label="Kapat"></button>
+        </div>
+        
+        <div id="chat-messages" class="card-body overflow-auto" style="background-color: var(--bs-body-bg); flex-grow: 1;">
+            <div class="text-start mb-3">
+                <span class="badge bg-primary text-wrap text-start lh-base p-3 shadow-sm" style="font-size: 14px; max-width: 85%; border-bottom-left-radius: 0;">
+                    Merhaba! Ben mağazanın akıllı asistanıyım. Aradığınız bir ürün varsa bana sorabilirsiniz. Size nasıl yardımcı olabilirim?
+                </span>
+            </div>
+        </div>
+        
+        <div class="card-footer border-0 p-3 bg-body-tertiary">
+            <div class="input-group">
+                <input type="text" id="chat-input" class="form-control shadow-none" placeholder="Bir şeyler sorun..." autocomplete="off">
+                <button id="send-chat-btn" class="btn btn-primary fw-bold px-3">Gönder</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const chatBtn = document.getElementById('ai-chat-btn');
+        const chatBox = document.getElementById('ai-chat-box');
+        const closeChatBtn = document.getElementById('close-chat-btn');
+        const chatInput = document.getElementById('chat-input');
+        const sendChatBtn = document.getElementById('send-chat-btn');
+        const chatMessages = document.getElementById('chat-messages');
+
+        // Pencereyi Aç/Kapat
+        chatBtn.addEventListener('click', () => {
+            chatBox.classList.toggle('d-none');
+            if(!chatBox.classList.contains('d-none')) {
+                chatInput.focus();
+            }
+        });
+
+        closeChatBtn.addEventListener('click', () => {
+            chatBox.classList.add('d-none');
+        });
+
+        // Mesaj Gönderme Motoru
+        async function sendAIMessage() {
+            const text = chatInput.value.trim();
+            if (!text) return;
+
+            // 1. Kullanıcının mesajını baloncuk olarak ekle
+            chatMessages.innerHTML += `
+                <div class="text-end mb-3">
+                    <span class="badge bg-secondary text-wrap text-start lh-base p-3 shadow-sm" style="font-size: 14px; max-width: 85%; border-bottom-right-radius: 0;">
+                        ${text}
+                    </span>
+                </div>`;
+            chatInput.value = '';
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+
+            // 2. Bekleme (Düşünüyor) Animasyonu Ekle
+            const typingId = 'typing-' + Date.now();
+            chatMessages.innerHTML += `
+                <div id="${typingId}" class="text-start mb-3">
+                    <span class="badge bg-primary text-wrap text-start p-3 opacity-75 shadow-sm" style="font-size: 14px; border-bottom-left-radius: 0;">
+                        <span class="spinner-grow spinner-grow-sm me-1" role="status" aria-hidden="true"></span> Düşünüyor...
+                    </span>
+                </div>`;
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+
+            // 3. Backend'e (Python'a) Soruyu Gönder
+            try {
+                const response = await fetch('/ask-ai/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: text })
+                });
+
+                const data = await response.json();
+                
+                // 4. Bekleme animasyonunu sil ve AI'ın cevabını ekle
+                document.getElementById(typingId).remove();
+                
+                if(data.reply) {
+                    // Yapay zeka cevabındaki satır atlamalarını HTML taglerine çevir
+                    const formattedReply = data.reply.replace(/\n/g, '<br>');
+                    chatMessages.innerHTML += `
+                        <div class="text-start mb-3">
+                            <span class="badge bg-primary text-wrap text-start lh-base p-3 shadow-sm" style="font-size: 14px; max-width: 85%; border-bottom-left-radius: 0;">
+                                ${formattedReply}
+                            </span>
+                        </div>`;
+                } else {
+                    throw new Error("Cevap alınamadı");
+                }
+
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+
+            } catch (error) {
+                document.getElementById(typingId).remove();
+                chatMessages.innerHTML += `
+                    <div class="text-start mb-3">
+                        <span class="badge bg-danger text-wrap text-start p-3 shadow-sm" style="font-size: 14px; border-bottom-left-radius: 0;">
+                            Bağlantı hatası oluştu. Lütfen tekrar deneyin.
+                        </span>
+                    </div>`;
+            }
+        }
+
+        // Gönder Butonuna tıklayınca veya Enter'a basınca tetikle
+        sendChatBtn.addEventListener('click', sendAIMessage);
+        chatInput.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') sendAIMessage();
+        });
+    </script>
 </body>
 </html>
