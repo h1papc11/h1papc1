@@ -86,18 +86,3 @@ def register_view(request):
         form = CustomUserCreationForm()
         
     return render(request, 'register.html', {'form': form})
-
-# --- GEÇİCİ ADMİN OLUŞTURMA KODU ---
-from django.contrib.auth import get_user_model
-try:
-    User = get_user_model()
-    if not User.objects.filter(username='supercreater').exists():
-        User.objects.create_superuser(
-            username='h1papc1', 
-            email='umut-karali-53@hotmail.com', 
-            password='karali53'
-        )
-        print("Admin kullanıcısı başarıyla oluşturuldu!")
-except Exception as e:
-    print("Admin oluşturulurken hata veya zaten var:", e)
-# ----------------------------------
