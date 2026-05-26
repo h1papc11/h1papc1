@@ -1,50 +1,64 @@
-
-from .models import Product
 from django.shortcuts import render, get_object_or_404, redirect
-from .forms import ReviewForm
-import stripe
-from django.conf import settings
-from django.urls import reverse
-from django.conf import settings
 from django.http import JsonResponse
-import json
+from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth.decorators import login_required
+from django.urls import reverse
+from django.db.models import Q
+
+import json
+import stripe
 from google import genai
+
+# Modellerimiz ve Formlarımız
+from .models import Product, Category, StockNotification
+from .forms import ReviewForm, ProductForm # ProductForm'u ekledik
+
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
-
+# ==========================================
+# ANA SAYFA VE ÜRÜN VİTRİNİ
+# ==========================================
 def home_view(request):
-    # Vitrindeki tüm ürünler
-    products = Product.objects.all()
-    
-    # Hafızadaki gezilen ürün ID'lerini al
+    query = request.GET.get('q', '')
+    category_slug = request.GET.get('category', '')
+
+    products = Product.objects.filter(stock__gt=0).order_by('-created_at')
+    categories = Category.objects.all()
+
+    if query:
+        products = products.filter(
+            Q(title__icontains=query) | Q(description__icontains=query)
+        )
+
+    if category_slug:
+        products = products.filter(category__slug=category_slug)
+
     recently_viewed_ids = request.session.get('recently_viewed', [])
-    
-    # Bu ID'lere sahip olan ürünleri veritabanından getir (id__in komutu bu işe yarar)
     recently_viewed_products = Product.objects.filter(id__in=recently_viewed_ids)
-    
-    return render(request, 'home.html', {
+
+    context = {
         'products': products,
-        'recently_viewed_products': recently_viewed_products
-    })
+        'categories': categories,
+        'query': query,
+        'category_slug': category_slug,
+        'recently_viewed_products': recently_viewed_products,
+    }
+    return render(request, 'home.html', context)
+
 def product_detail_view(request, pk):
     product = get_object_or_404(Product, pk=pk)
     reviews = product.reviews.all().order_by('-created_at')
 
-    # --- YENİ: Session Hafızası İşlemleri ---
-    # Kullanıcının hafızasındaki 'recently_viewed' listesini al, yoksa boş liste döndür
+    # Session Hafızası İşlemleri
     recently_viewed = request.session.get('recently_viewed', [])
     
-    # Eğer bu ürünün ID'si listede yoksa, listenin en başına (index 0) ekle
     if pk not in recently_viewed:
         recently_viewed.insert(0, pk)
-        # Hafıza şişmesin diye sadece son 4 ürünü tut
         if len(recently_viewed) > 4:
             recently_viewed.pop()
             
-    # Güncel listeyi tekrar hafızaya (Session) kaydet
     request.session['recently_viewed'] = recently_viewed
-    # ----------------------------------------
 
     if request.method == 'POST':
         if request.user.is_authenticated:
@@ -64,56 +78,72 @@ def product_detail_view(request, pk):
         'form': form
     })
 
-from django.contrib.auth.decorators import login_required
-from .models import Product, StockNotification # StockNotification import edildi
-
-# ... (mevcut kodlar) ...
-
+# ==========================================
+# STOK BİLDİRİMİ VE YAPAY ZEKA
+# ==========================================
 @login_required
 def notify_me_view(request, pk):
     product = get_object_or_404(Product, pk=pk)
-    
-    # Sadece stoğu biten ürünler için bekleme listesine eklenebilir
     if product.stock == 0:
-        # Kullanıcı zaten listede yoksa ekler, varsa hata vermez
         StockNotification.objects.get_or_create(user=request.user, product=product)
-        
     return redirect('product_detail', pk=pk)
 
-@csrf_exempt # Geçici olarak AJAX isteklerinde kolaylık sağlaması için
+@csrf_exempt 
 def ai_assistant_view(request):
     if request.method == "POST":
         try:
-            # Gelen mesajı oku
             data = json.loads(request.body)
             user_message = data.get('message')
 
-            # Gemini API'sini çalıştır
-            genai.configure(api_key=settings.GEMINI_API_KEY)
-
-            # 1. Veritabanından stoktaki ürünleri alıyoruz
             available_products = Product.objects.filter(stock__gt=0).values_list('title', 'price')
-            
-            # 2. Ürünleri yapay zekanın okuyabileceği bir metne çeviriyoruz
             product_list_text = ", ".join([f"{p[0]} ({p[1]} TL)" for p in available_products])
 
-            # 3. Sisteme kim olduğunu öğretiyoruz (Sistem Promptu)
             system_instruction = f"""Sen bu e-ticaret sitesinin arkadaş canlısı ve profesyonel müşteri asistanısın. 
             Amacın müşterilere kısa ve net cevaplar vererek satış yapmalarını sağlamak. 
             Şu an elimizdeki stokta bulunan ürünler ve fiyatları şunlar: {product_list_text}. 
             Müşteri bir şey sorarsa SADECE bu ürünler üzerinden tavsiye ver. 
             Eğer ilgisiz bir şey sorulursa kibarca e-ticaret asistanı olduğunu hatırlat."""
 
-            # 4. Modeli başlat ve cevabı üret
-            model = genai.GenerativeModel('gemini-1.5-flash')
+            # Güncel google-genai kütüphanesine uygun API çağrısı
+            client = genai.Client(api_key=settings.GEMINI_API_KEY)
             prompt = f"{system_instruction}\n\nMüşteri: {user_message}\nAsistan:"
             
-            response = model.generate_content(prompt)
+            response = client.models.generate_content(
+                model='gemini-1.5-flash',
+                contents=prompt
+            )
 
-            # Cevabı siteye (arayüze) geri gönder
             return JsonResponse({'reply': response.text})
             
         except Exception as e:
             return JsonResponse({'reply': 'Üzgünüm, şu an bağlantı kuramıyorum. Lütfen daha sonra tekrar deneyin.'})
             
     return JsonResponse({'error': 'Geçersiz istek.'}, status=400)
+
+
+# ==========================================
+# ADIM 2: SATICI (VENDOR) FONKSİYONLARI (BİRLEŞTİRİLDİ)
+# ==========================================
+@login_required(login_url='/accounts/login/')
+def vendor_dashboard(request):
+    # 1. Satıcının mevcut ürünlerini çek
+    my_products = Product.objects.filter(vendor=request.user).order_by('-created_at')
+    
+    # 2. Yeni ürün ekleme formu (POST işlemi)
+    if request.method == 'POST':
+        form = ProductForm(request.POST, request.FILES)
+        if form.is_valid():
+            new_product = form.save(commit=False)
+            new_product.vendor = request.user 
+            new_product.save()
+            # Form gönderildikten sonra sayfayı yenile ki ürün listeye düşsün
+            return redirect('vendor_dashboard')
+    else:
+        # Sayfa ilk açıldığında boş form gönder
+        form = ProductForm()
+        
+    context = {
+        'my_products': my_products, # Senin HTML'de kullandığın değişken adı
+        'form': form
+    }
+    return render(request, 'vendor_dashboard.html', context)

@@ -5,7 +5,7 @@ class ProductForm(forms.ModelForm):
     class Meta:
         model = Product
         # Satıcıyı (vendor) formdan çıkardık çünkü arka planda otomatik ekleyeceğiz.
-        fields = ['categories', 'title', 'description', 'price', 'stock']
+        fields = ['category', 'title', 'description', 'price', 'stock']
 
 class ReviewForm(forms.ModelForm):
     class Meta:

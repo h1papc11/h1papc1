@@ -12,7 +12,7 @@ class ProductImageInline(admin.TabularInline):
 # Ürün modelini özel ayarlarıyla kaydediyoruz
 class ProductAdmin(admin.ModelAdmin):
     list_display = ['title', 'vendor', 'price', 'stock'] # Admin listesinde görünecek sütunlar
-    list_filter = ['categories', 'vendor'] # Sağ tarafa filtreleme menüsü ekler
+    list_filter = ['category', 'vendor'] # Sağ tarafa filtreleme menüsü ekler
     inlines = [ProductImageInline] # Görsel ekleme alanını ürün sayfasına bağladık
 
 admin.site.register(Product, ProductAdmin)
