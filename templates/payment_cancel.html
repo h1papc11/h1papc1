@@ -1,8 +1,19 @@
 {% extends 'base.html' %}
+
 {% block content %}
-    <div style="text-align: center; padding: 50px;">
-        <h1 style="color: red;">Ödeme İptal Edildi ❌</h1>
-        <p>Ödeme işlemi sırasında bir sorun oluştu veya işlemi iptal ettiniz.</p>
-        <a href="{% url 'cart_view' %}" style="display: inline-block; margin-top: 20px; padding: 10px 20px; background-color: #e74c3c; color: white; text-decoration: none; border-radius: 5px;">Sepete Dön</a>
+<div class="container text-center mt-5 mb-5 py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow border-0 rounded-4 p-5 text-center">
+                <span class="text-danger mb-3" style="font-size: 80px;">❌</span>
+                <h2 class="fw-bold text-danger mb-3">Ödeme İptal Edildi</h2>
+                <p class="text-muted fs-5 mb-4">Ödeme işlemi sırasında bir sorun oluştu veya işlemi siz iptal ettiniz. Sepetinizdeki ürünler güvende, tekrar deneyebilirsiniz.</p>
+                <div class="d-flex justify-content-center gap-3">
+                    <a href="{% url 'cart_view' %}" class="btn btn-outline-dark btn-lg fw-bold px-4">Sepete Dön</a>
+                    <a href="{% url 'home' %}" class="btn btn-primary btn-lg fw-bold px-4">Ana Sayfa</a>
+                </div>
+            </div>
+        </div>
     </div>
+</div>
 {% endblock %}
