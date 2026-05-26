@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-5 mb-5 text-center">
+    <h2 class="fw-bold mb-4">👑 Süper Admin Kontrol Merkezi</h2>
+    <p class="lead text-muted mb-5">Sistemdeki tüm işlemleri, kuponları ve kullanıcıları bu merkezden yönetebilirsiniz.</p>
+
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-sm border-0 border-top border-5 border-danger bg-body-tertiary">
+                <div class="card-body p-5">
+                    <h1 class="display-1 mb-3">⚙️</h1>
+                    <h3 class="fw-bold mb-3">Veritabanı Yönetimi</h3>
+                    <p class="mb-4 text-secondary">Kategorileri düzenlemek, yeni indirim kuponları yaratmak ve mağazaları kontrol etmek için güvenli alana geçiş yapın.</p>
+                    <a href="/gizli-yonetim-odasi/" class="btn btn-danger btn-lg w-100 fw-bold shadow-sm">Veritabanı Paneline Git 🚀</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

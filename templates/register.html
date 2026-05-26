@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="row justify-content-center mt-5 mb-5">
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-body p-4">
+                <h3 class="card-title text-center mb-4 fw-bold">Sisteme Kayıt Ol</h3>
+                <p class="text-center text-muted mb-4">Aramıza katılmak için aşağıdaki formu doldurun.</p>
+                
+                <form method="POST">
+                    {% csrf_token %}
+                    {{ form|crispy }}
+                    <div class="d-grid gap-2 mt-4">
+                        <button type="submit" class="btn btn-success btn-lg">Kayıt Ol</button>
+                    </div>
+                </form>
+                
+                <div class="text-center mt-3">
+                    <span class="text-muted">Zaten bir hesabınız var mı?</span> 
+                    <a href="{% url 'login' %}" class="text-decoration-none fw-bold">Giriş Yapın</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

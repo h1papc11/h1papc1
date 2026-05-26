@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4 mb-5">
+    <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-4">
+        <h2 class="fw-bold mb-0">✉️ Gelen Kutusu</h2>
+        <span class="badge bg-primary rounded-pill fs-6">{{ messages.count }} Mesaj</span>
+    </div>
+    
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            {% for message in messages %}
+                <div class="card shadow-sm mb-3 border-0 border-start border-4 border-primary">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="card-subtitle text-muted mb-0">
+                                <b>Kimden:</b> {{ message.sender.username }} 
+                                <span class="ms-2 badge bg-light text-dark border">{{ message.sender.role }}</span>
+                            </h6>
+                            <small class="text-muted">{{ message.created_at|date:"d M Y, H:i" }}</small>
+                        </div>
+                        <h5 class="card-title fw-bold mt-2">{{ message.subject }}</h5>
+                        <p class="card-text text-secondary">{{ message.body }}</p>
+                        
+                        <div class="text-end mt-3">
+                            <a href="{% url 'send_message' message.sender.id %}" class="btn btn-sm btn-outline-primary fw-bold">↩️ Yanıtla</a>
+                        </div>
+                    </div>
+                </div>
+            {% empty %}
+                <div class="text-center py-5 bg-body-tertiary rounded">
+                    <h3 class="text-muted fw-bold">Gelen kutunuz boş</h3>
+                    <p class="text-secondary">Henüz kimse size mesaj göndermemiş.</p>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4 mb-5">
+    <h2 class="fw-bold mb-4">🛒 Sepetim</h2>
+    
+    {% if items %}
+        <div class="row">
+            <div class="col-lg-8 mb-4">
+                <div class="card shadow-sm border-0">
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th scope="col" class="ps-4">Ürün</th>
+                                        <th scope="col">Birim Fiyat</th>
+                                        <th scope="col">Adet</th>
+                                        <th scope="col" class="text-end pe-4">Toplam</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in items %}
+                                    <tr>
+                                        <td class="ps-4 fw-bold text-primary">{{ item.product.title }}</td>
+                                        <td>{{ item.product.price }} TL</td>
+                                        <td><span class="badge bg-secondary fs-6">{{ item.quantity }}</span></td>
+                                        <td class="text-end pe-4 fw-bold text-success">{{ item.get_total_price }} TL</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-4">
+                <div class="card shadow-sm border-0 mb-4 bg-body-tertiary">
+                    <div class="card-body">
+                        <h5 class="card-title fw-bold mb-3">🏷️ İndirim Kuponu</h5>
+                        <form action="{% url 'apply_coupon' %}" method="POST" class="d-flex gap-2">
+                            {% csrf_token %}
+                            <input type="text" name="coupon_code" class="form-control" placeholder="Kupon Kodu" required>
+                            <button type="submit" class="btn btn-dark fw-bold">Uygula</button>
+                        </form>
+                        {% if cart.coupon %}
+                            <div class="alert alert-success mt-3 mb-0 py-2">
+                                <b>{{ cart.coupon.code }}</b> uygulandı! (%{{ cart.coupon.discount_percent }} İndirim)
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="card shadow-sm border-0">
+                    <div class="card-body p-4">
+                        <h5 class="card-title fw-bold border-bottom pb-3 mb-3">Sipariş Özeti</h5>
+                        
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted">Ara Toplam</span>
+                            <span class="fw-bold">{{ sub_total }} TL</span>
+                        </div>
+                        
+                        {% if cart.coupon %}
+                            <div class="d-flex justify-content-between mb-2 text-danger">
+                                <span>İndirim</span>
+                                <span class="fw-bold">-{{ discount_amount }} TL</span>
+                            </div>
+                        {% endif %}
+                        
+                        <hr>
+                        
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <span class="fs-5 fw-bold">Genel Toplam</span>
+                            <span class="fs-4 fw-bold text-success">{{ total_amount }} TL</span>
+                        </div>
+                        
+                        <form action="{% url 'create_checkout_session' %}" method="POST" class="d-grid">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-success btn-lg fw-bold shadow-sm">🔒 Güvenli Ödeme Yap</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <div class="text-center py-5">
+            <h1 class="display-1 text-muted">🛒</h1>
+            <h3 class="fw-bold mt-3">Sepetiniz şu an boş.</h3>
+            <p class="text-muted mb-4">Harika ürünler bulmak için vitrinimize göz atmaya ne dersiniz?</p>
+            <a href="{% url 'home' %}" class="btn btn-primary btn-lg fw-bold px-5">Alışverişe Başla</a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

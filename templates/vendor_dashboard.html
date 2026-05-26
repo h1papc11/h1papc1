@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="container mt-4 mb-5">
+    <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-4">
+        <h2 class="fw-bold mb-0">🏪 Mağaza Yönetim Paneli</h2>
+        <span class="badge bg-primary fs-6">Satıcı: {{ request.user.username }}</span>
+    </div>
+
+    <div class="row">
+        <div class="col-md-5 mb-4">
+            <div class="card shadow-sm border-0 h-100 bg-body-tertiary">
+                <div class="card-header bg-success text-white py-3">
+                    <h5 class="mb-0 fw-bold">➕ Yeni Ürün Vitrine Ekle</h5>
+                </div>
+                <div class="card-body p-4">
+                    <form method="POST" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        {{ form|crispy }}
+                        <div class="d-grid mt-4">
+                            <button type="submit" class="btn btn-success btn-lg fw-bold shadow-sm">🚀 Ürünü Yayınla</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-7">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-dark text-white py-3">
+                    <h5 class="mb-0 fw-bold">📦 Benim Ürünlerim</h5>
+                </div>
+                <div class="card-body p-0">
+                    <ul class="list-group list-group-flush">
+                        {% for product in my_products %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center p-3 transition-hover">
+                                <div class="d-flex align-items-center gap-3">
+                                    {% if product.images.first %}
+                                        <img src="{{ product.images.first.image.url }}" alt="" class="rounded shadow-sm" style="width: 60px; height: 60px; object-fit: cover;">
+                                    {% else %}
+                                        <div class="bg-secondary rounded shadow-sm d-flex justify-content-center align-items-center text-white" style="width: 60px; height: 60px; font-size: 11px;">Görsel Yok</div>
+                                    {% endif %}
+                                    <div>
+                                        <h6 class="mb-1 fw-bold"><a href="{% url 'product_detail' product.pk %}" class="text-decoration-none">{{ product.title }}</a></h6>
+                                        <span class="text-success fw-bold">{{ product.price }} TL</span>
+                                    </div>
+                                </div>
+                                <div class="text-end">
+                                    <span class="badge {% if product.stock > 0 %}bg-primary{% else %}bg-danger{% endif %} rounded-pill fs-6 shadow-sm">
+                                        Stok: {{ product.stock }}
+                                    </span>
+                                </div>
+                            </li>
+                        {% empty %}
+                            <li class="list-group-item p-5 text-center text-muted">
+                                <h4 class="mb-3">Vitrininiz bomboş!</h4>
+                                <p>Sol taraftaki formu kullanarak hemen ilk ürününüzü ekleyin.</p>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

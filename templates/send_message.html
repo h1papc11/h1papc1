@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="row justify-content-center mt-5 mb-5">
+    <div class="col-md-6">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-primary text-white py-3">
+                <h4 class="card-title mb-0 fw-bold">Mesaj Gönder</h4>
+            </div>
+            <div class="card-body p-4 bg-body-tertiary">
+                <div class="alert alert-info border-0 shadow-sm mb-4">
+                    <b>Alıcı:</b> {{ receiver.username }} ({{ receiver.role|title }})
+                </div>
+                
+                <form method="POST">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Konu</label>
+                        <input type="text" name="subject" class="form-control form-control-lg shadow-sm" required>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Mesajınız</label>
+                        <textarea name="body" rows="6" class="form-control shadow-sm" required></textarea>
+                    </div>
+                    
+                    <div class="d-grid gap-2 text-end">
+                        <button type="submit" class="btn btn-success btn-lg fw-bold shadow-sm">🚀 Mesajı Gönder</button>
+                        <a href="{% url 'home' %}" class="btn btn-outline-secondary">İptal</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
