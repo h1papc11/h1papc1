@@ -47,6 +47,11 @@ INSTALLED_APPS = [
     'chat',
     'crispy_forms',
     'crispy_bootstrap5',
+    'django.contrib.sites', # Allauth'un çalışması için şarttır
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.google',
 ]
 
 MIDDLEWARE = [
@@ -58,6 +63,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
+    'allauth.account.middleware.AccountMiddleware',
 ]
 
 ROOT_URLCONF = 'core.urls'
@@ -155,3 +161,21 @@ CRISPY_TEMPLATE_PACK = "bootstrap5"
 
 # YAPAY ZEKA (AI) AYARLARI
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
+
+SITE_ID = 1
+
+# --- DJANGO-ALLAUTH AYARLARI ---
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend', # Standart giriş
+    'allauth.account.auth_backends.AuthenticationBackend', # Google vs. için
+]
+
+# Giriş ve Çıkış yapıldığında nereye yönlendirilecek?
+LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/'
+
+# E-posta ile kaydı kolaylaştıran ayarlar
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_USERNAME_REQUIRED = False
+ACCOUNT_AUTHENTICATION_METHOD = 'email'
+ACCOUNT_EMAIL_VERIFICATION = 'none' # Geliştirme aşamasında doğrulama maili atmasın
